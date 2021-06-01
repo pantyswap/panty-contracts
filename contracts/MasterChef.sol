@@ -1,9 +1,9 @@
 pragma solidity 0.6.12;
 
-import '@pancakeswap/pancake-swap-lib/contracts/math/SafeMath.sol';
-import '@pancakeswap/pancake-swap-lib/contracts/token/BEP20/IBEP20.sol';
-import '@pancakeswap/pancake-swap-lib/contracts/token/BEP20/SafeBEP20.sol';
-import '@pancakeswap/pancake-swap-lib/contracts/access/Ownable.sol';
+import "@pancakeswap/pancake-swap-lib/contracts/math/SafeMath.sol";
+import "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/IBEP20.sol";
+import "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/SafeBEP20.sol";
+import "@pancakeswap/pancake-swap-lib/contracts/access/Ownable.sol";
 
 import "./PantyToken.sol";
 import "./SyrupBar.sol";
@@ -27,7 +27,7 @@ contract MasterChef is Ownable {
 
     // Info of each user.
     struct UserInfo {
-        uint256 amount;     // How many LP tokens the user has provided.
+        uint256 amount; // How many LP tokens the user has provided.
         uint256 rewardDebt; // Reward debt. See explanation below.
         //
         // We do some fancy math here. Basically, any point in time, the amount of PANTYs
@@ -44,11 +44,11 @@ contract MasterChef is Ownable {
 
     // Info of each pool.
     struct PoolInfo {
-        IBEP20 lpToken;           // Address of LP token contract.
-        uint256 allocPoint;       // How many allocation points assigned to this pool. PANTYs to distribute per block.
-        uint256 lastRewardBlock;  // Last block number that PANTYs distribution occurs.
+        IBEP20 lpToken; // Address of LP token contract.
+        uint256 allocPoint; // How many allocation points assigned to this pool. PANTYs to distribute per block.
+        uint256 lastRewardBlock; // Last block number that PANTYs distribution occurs.
         uint256 accPantyPerShare; // Accumulated PANTYs per share, times 1e12. See below.
-        uint16 depositFeeBP;      // Deposit fee in basis points
+        uint16 depositFeeBP; // Deposit fee in basis points
     }
 
     // The PANTY TOKEN!
@@ -69,7 +69,7 @@ contract MasterChef is Ownable {
     // Info of each pool.
     PoolInfo[] public poolInfo;
     // Info of each user that stakes LP tokens.
-    mapping (uint256 => mapping (address => UserInfo)) public userInfo;
+    mapping(uint256 => mapping(address => UserInfo)) public userInfo;
     // Total allocation points. Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint = 0;
     // The block number when PANTY mining starts.
@@ -77,7 +77,11 @@ contract MasterChef is Ownable {
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
-    event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
+    event EmergencyWithdraw(
+        address indexed user,
+        uint256 indexed pid,
+        uint256 amount
+    );
     event SetFeeAddress(address indexed user, address indexed newAddress);
     event SetDevAddress(address indexed user, address indexed newAddress);
     event UpdateEmissionRate(address indexed user, uint256 pantyPerBlock);
@@ -98,16 +102,17 @@ contract MasterChef is Ownable {
         startBlock = _startBlock;
 
         // staking pool
-        poolInfo.push(PoolInfo({
-            lpToken: _panty,
-            allocPoint: 1000,
-            lastRewardBlock: startBlock,
-            accPantyPerShare: 0,
-            depositFeeBP: 0
-        }));
+        poolInfo.push(
+            PoolInfo({
+                lpToken: _panty,
+                allocPoint: 1000,
+                lastRewardBlock: startBlock,
+                accPantyPerShare: 0,
+                depositFeeBP: 0
+            })
+        );
 
         totalAllocPoint = 1000;
-
     }
 
     function updateMultiplier(uint256 multiplierNumber) public onlyOwner {
@@ -124,36 +129,59 @@ contract MasterChef is Ownable {
         _;
     }
 
-    // Add a new lp to the pool. Can only be called by the owner.   
-    function add(uint256 _allocPoint, IBEP20 _lpToken, uint16 _depositFeeBP, bool _withUpdate) public onlyOwner nonDuplicated(_lpToken) {
-        require(_depositFeeBP <= 10000, "add: invalid deposit fee basis points");
+    // Add a new lp to the pool. Can only be called by the owner.
+    function add(
+        uint256 _allocPoint,
+        IBEP20 _lpToken,
+        uint16 _depositFeeBP,
+        bool _withUpdate
+    ) public onlyOwner nonDuplicated(_lpToken) {
+        require(
+            _depositFeeBP <= 10000,
+            "add: invalid deposit fee basis points"
+        );
         if (_withUpdate) {
             massUpdatePools();
         }
-        uint256 lastRewardBlock = block.number > startBlock ? block.number : startBlock;
+        uint256 lastRewardBlock =
+            block.number > startBlock ? block.number : startBlock;
         totalAllocPoint = totalAllocPoint.add(_allocPoint);
-        poolInfo.push(PoolInfo({
-            lpToken: _lpToken,
-            allocPoint: _allocPoint,
-            lastRewardBlock: lastRewardBlock,
-            accPantyPerShare: 0,
-            depositFeeBP : _depositFeeBP
-        }));
+        poolInfo.push(
+            PoolInfo({
+                lpToken: _lpToken,
+                allocPoint: _allocPoint,
+                lastRewardBlock: lastRewardBlock,
+                accPantyPerShare: 0,
+                depositFeeBP: _depositFeeBP
+            })
+        );
         updateStakingPool();
     }
 
     // Update the given pool's PANTY allocation point. Can only be called by the owner.
-    function set(uint256 _pid, uint256 _allocPoint, uint16 _depositFeeBP, bool _withUpdate) public onlyOwner {
-	require(_depositFeeBP <= 10000, "set: invalid deposit fee basis points");
+    function set(
+        uint256 _pid,
+        uint256 _allocPoint,
+        uint16 _depositFeeBP,
+        bool _withUpdate
+    ) public onlyOwner {
+        require(
+            _depositFeeBP <= 10000,
+            "set: invalid deposit fee basis points"
+        );
         if (_withUpdate) {
             massUpdatePools();
         }
         uint256 prevAllocPoint = poolInfo[_pid].allocPoint;
-	    uint16 prevDepositFeeBP = poolInfo[_pid].depositFeeBP;
+        uint16 prevDepositFeeBP = poolInfo[_pid].depositFeeBP;
         poolInfo[_pid].allocPoint = _allocPoint;
-	    poolInfo[_pid].depositFeeBP = _depositFeeBP;
-        if (prevAllocPoint != _allocPoint || prevDepositFeeBP != _depositFeeBP) {
-            totalAllocPoint = totalAllocPoint.sub(prevAllocPoint).add(_allocPoint);
+        poolInfo[_pid].depositFeeBP = _depositFeeBP;
+        if (
+            prevAllocPoint != _allocPoint || prevDepositFeeBP != _depositFeeBP
+        ) {
+            totalAllocPoint = totalAllocPoint.sub(prevAllocPoint).add(
+                _allocPoint
+            );
             updateStakingPool();
         }
     }
@@ -166,7 +194,9 @@ contract MasterChef is Ownable {
         }
         if (points != 0) {
             points = points.div(3);
-            totalAllocPoint = totalAllocPoint.sub(poolInfo[0].allocPoint).add(points);
+            totalAllocPoint = totalAllocPoint.sub(poolInfo[0].allocPoint).add(
+                points
+            );
             poolInfo[0].allocPoint = points;
         }
     }
@@ -189,20 +219,34 @@ contract MasterChef is Ownable {
     }
 
     // Return reward multiplier over the given _from to _to block.
-    function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256) {
+    function getMultiplier(uint256 _from, uint256 _to)
+        public
+        view
+        returns (uint256)
+    {
         return _to.sub(_from).mul(BONUS_MULTIPLIER);
     }
 
     // View function to see pending PANTYs on frontend.
-    function pendingPanty(uint256 _pid, address _user) external view returns (uint256) {
+    function pendingPanty(uint256 _pid, address _user)
+        external
+        view
+        returns (uint256)
+    {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accPantyPerShare = pool.accPantyPerShare;
         uint256 lpSupply = pool.lpToken.balanceOf(address(this));
         if (block.number > pool.lastRewardBlock && lpSupply != 0) {
-            uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
-            uint256 pantyReward = multiplier.mul(pantyPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
-            accPantyPerShare = accPantyPerShare.add(pantyReward.mul(1e12).div(lpSupply));
+            uint256 multiplier =
+                getMultiplier(pool.lastRewardBlock, block.number);
+            uint256 pantyReward =
+                multiplier.mul(pantyPerBlock).mul(pool.allocPoint).div(
+                    totalAllocPoint
+                );
+            accPantyPerShare = accPantyPerShare.add(
+                pantyReward.mul(1e12).div(lpSupply)
+            );
         }
         return user.amount.mul(accPantyPerShare).div(1e12).sub(user.rewardDebt);
     }
@@ -214,7 +258,6 @@ contract MasterChef is Ownable {
             updatePool(pid);
         }
     }
-
 
     // Update reward variables of the given pool to be up-to-date.
     function updatePool(uint256 _pid) public {
@@ -228,30 +271,41 @@ contract MasterChef is Ownable {
             return;
         }
         uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
-        uint256 pantyReward = multiplier.mul(pantyPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
-        panty.mint(devaddr, pantyReward.mul(909).div(10000));        // 9.09% goes to dev address
+        uint256 pantyReward =
+            multiplier.mul(pantyPerBlock).mul(pool.allocPoint).div(
+                totalAllocPoint
+            );
+        panty.mint(devaddr, pantyReward.mul(909).div(10000)); // 9.09% goes to dev address
         panty.mint(address(syrup), pantyReward);
-        pool.accPantyPerShare = pool.accPantyPerShare.add(pantyReward.mul(1e12).div(lpSupply));
+        pool.accPantyPerShare = pool.accPantyPerShare.add(
+            pantyReward.mul(1e12).div(lpSupply)
+        );
         pool.lastRewardBlock = block.number;
     }
 
     // Deposit LP tokens to MasterChef for PANTY allocation.
     function deposit(uint256 _pid, uint256 _amount) public {
-
-        require (_pid != 0, 'deposit PANTY by staking');
+        require(_pid != 0, "deposit PANTY by staking");
 
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
         if (user.amount > 0) {
-            uint256 pending = user.amount.mul(pool.accPantyPerShare).div(1e12).sub(user.rewardDebt);
-            if(pending > 0) {
+            uint256 pending =
+                user.amount.mul(pool.accPantyPerShare).div(1e12).sub(
+                    user.rewardDebt
+                );
+            if (pending > 0) {
                 safePantyTransfer(msg.sender, pending);
             }
         }
         if (_amount > 0) {
-            pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
-	    if (pool.depositFeeBP > 0) {
+            pool.lpToken.safeTransferFrom(
+                address(msg.sender),
+                address(this),
+                _amount
+            );
+            if (pool.depositFeeBP > 0) {
                 uint256 depositFee = _amount.mul(pool.depositFeeBP).div(10000);
                 pool.lpToken.safeTransfer(feeAddress, depositFee);
                 user.amount = user.amount.add(_amount).sub(depositFee);
@@ -265,18 +319,20 @@ contract MasterChef is Ownable {
 
     // Withdraw LP tokens from MasterChef.
     function withdraw(uint256 _pid, uint256 _amount) public {
-
-        require (_pid != 0, 'withdraw PANTY by unstaking');
+        require(_pid != 0, "withdraw PANTY by unstaking");
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.amount >= _amount, "withdraw: not good");
 
         updatePool(_pid);
-        uint256 pending = user.amount.mul(pool.accPantyPerShare).div(1e12).sub(user.rewardDebt);
-        if(pending > 0) {
+        uint256 pending =
+            user.amount.mul(pool.accPantyPerShare).div(1e12).sub(
+                user.rewardDebt
+            );
+        if (pending > 0) {
             safePantyTransfer(msg.sender, pending);
         }
-        if(_amount > 0) {
+        if (_amount > 0) {
             user.amount = user.amount.sub(_amount);
             pool.lpToken.safeTransfer(address(msg.sender), _amount);
         }
@@ -290,13 +346,20 @@ contract MasterChef is Ownable {
         UserInfo storage user = userInfo[0][msg.sender];
         updatePool(0);
         if (user.amount > 0) {
-            uint256 pending = user.amount.mul(pool.accPantyPerShare).div(1e12).sub(user.rewardDebt);
-            if(pending > 0) {
+            uint256 pending =
+                user.amount.mul(pool.accPantyPerShare).div(1e12).sub(
+                    user.rewardDebt
+                );
+            if (pending > 0) {
                 safePantyTransfer(msg.sender, pending);
             }
         }
-        if(_amount > 0) {
-            pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
+        if (_amount > 0) {
+            pool.lpToken.safeTransferFrom(
+                address(msg.sender),
+                address(this),
+                _amount
+            );
             user.amount = user.amount.add(_amount);
         }
         user.rewardDebt = user.amount.mul(pool.accPantyPerShare).div(1e12);
@@ -311,11 +374,14 @@ contract MasterChef is Ownable {
         UserInfo storage user = userInfo[0][msg.sender];
         require(user.amount >= _amount, "withdraw: not good");
         updatePool(0);
-        uint256 pending = user.amount.mul(pool.accPantyPerShare).div(1e12).sub(user.rewardDebt);
-        if(pending > 0) {
+        uint256 pending =
+            user.amount.mul(pool.accPantyPerShare).div(1e12).sub(
+                user.rewardDebt
+            );
+        if (pending > 0) {
             safePantyTransfer(msg.sender, pending);
         }
-        if(_amount > 0) {
+        if (_amount > 0) {
             user.amount = user.amount.sub(_amount);
             pool.lpToken.safeTransfer(address(msg.sender), _amount);
         }
@@ -346,6 +412,7 @@ contract MasterChef is Ownable {
         devaddr = _devaddr;
         emit SetDevAddress(msg.sender, _devaddr);
     }
+
     function setFeeAddress(address _feeAddress) public {
         require(msg.sender == feeAddress, "setFeeAddress: FORBIDDEN");
         feeAddress = _feeAddress;
