@@ -1065,10 +1065,7 @@ contract SmartChefInitializable is Ownable, ReentrancyGuard {
 
             if (depositFee > 0) {
                 uint256 fee = _amount.mul(depositFee).div(10000);
-                stakedToken.safeTransfer(
-                    address(this),
-                    fee
-                );
+                stakedToken.safeTransfer(feeAddress, fee);
                 user.amount = user.amount.add(_amount).sub(fee);
             } else {
                 user.amount = user.amount.add(_amount);
@@ -1098,8 +1095,14 @@ contract SmartChefInitializable is Ownable, ReentrancyGuard {
             );
 
         if (_amount > 0) {
-            user.amount = user.amount.sub(_amount);
-            stakedToken.safeTransfer(address(msg.sender), _amount);
+            uint256 realAmount = _amount;
+
+            if (user.amount < realAmount) {
+                realAmount = user.amount;
+            }
+
+            user.amount = user.amount.sub(realAmount);
+            stakedToken.safeTransfer(address(msg.sender), realAmount);
         }
 
         if (pending > 0) {
